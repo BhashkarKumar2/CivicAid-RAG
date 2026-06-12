@@ -1,0 +1,115 @@
+[
+  {
+    "id": "pm-kisan",
+    "name": "PM-KISAN Samman Nidhi",
+    "fetched_pages": [
+      {
+        "url": "https://www.pmkisan.gov.in/?hl=en-IN",
+        "status": "ok",
+        "chars": 6273,
+        "error": null
+      },
+      {
+        "url": "https://pmkisan.gov.in/",
+        "status": "ok",
+        "chars": 6273,
+        "error": null
+      }
+    ],
+    "official_excerpt_chars": 2500
+  },
+  {
+    "id": "bihar-post-matric-scholarship",
+    "name": "Bihar Post Matric Scholarship",
+    "fetched_pages": [
+      {
+        "url": "https://pmsonline.bihar.gov.in/Default.aspx",
+        "status": "ok",
+        "chars": 5257,
+        "error": null
+      },
+      {
+        "url": "https://instpmsonline.bihar.gov.in/",
+        "status": "ok",
+        "chars": 2171,
+        "error": null
+      },
+      {
+        "url": "https://instpmsonline.bihar.gov.in/pmsbcebc2223off/pms/faq.aspx",
+        "status": "ok",
+        "chars": 10142,
+        "error": null
+      }
+    ],
+    "official_excerpt_chars": 2500
+  },
+  {
+    "id": "ayushman-bharat-pmjay",
+    "name": "Ayushman Bharat PM-JAY",
+    "fetched_pages": [
+      {
+        "url": "https://nha.gov.in/PM-JAY.php",
+        "status": "ok",
+        "chars": 17,
+        "error": null
+      },
+      {
+        "url": "https://pmjay.gov.in/",
+        "status": "ok",
+        "chars": 11650,
+        "error": null
+      }
+    ],
+    "official_excerpt_chars": 2500
+  },
+  {
+    "id": "stand-up-india",
+    "name": "Stand-Up India Scheme",
+    "fetched_pages": [
+      {
+        "url": "https://www.myscheme.gov.in/schemes/sui",
+        "status": "ok",
+        "chars": 643,
+        "error": null
+      },
+      {
+        "url": "https://www.standupmitra.in/",
+        "status": "ok",
+        "chars": 52747,
+        "error": null
+      }
+    ],
+    "official_excerpt_chars": 2500
+  },
+  {
+    "id": "pmay-urban",
+    "name": "Pradhan Mantri Awas Yojana Urban",
+    "fetched_pages": [
+      {
+        "url": "https://pmaymis.gov.in/",
+        "status": "ok",
+        "chars": 4709,
+        "error": null
+      },
+      {
+        "url": "https://pmaymis.gov.in/pmaymis2_2024/PMAY_SURVEY/EligiblityCheck.aspx",
+        "status": "ok",
+        "chars": 6454,
+        "error": null
+      },
+      {
+        "url": "https://pmaymis.gov.in/pmaymis2_2024/faq.html",
+        "status": "ok",
+        "chars": 56796,
+        "error": null
+      },
+      {
+        "url": "https://pmaymis.gov.in/pmaymis2_2024/interest-subsidy-scheme-ISS.html",
+        "status": "ok",
+        "chars": 4998,
+        "error": null
+      }
+    ],
+    "official_excerpt_chars": 2500
+  }
+]

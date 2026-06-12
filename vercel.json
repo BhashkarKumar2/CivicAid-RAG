@@ -1,0 +1,10 @@
+{
+  "experimentalServices": {
+    "civicaid-rag": {
+      "entrypoint": "app/app.py",
+      "routePrefix": "/",
+      "framework": "fastapi",
+      "maxDuration": 60
+    }
+  }
+}

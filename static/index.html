@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CivicAid RAG</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Explainable Government Scheme Assistant</p>
+          <h1>CivicAid RAG</h1>
+          <p class="subtitle">
+            Find schemes, check eligibility, and get document/application guidance with source citations.
+          </p>
+        </div>
+        <div class="status" id="status">Checking API...</div>
+      </section>
+
+      <section class="workspace">
+        <form class="panel" id="askForm">
+          <h2>Citizen Profile</h2>
+          <div class="grid">
+            <label>
+              Age
+              <input name="age" type="number" min="0" placeholder="21" />
+            </label>
+            <label>
+              State
+              <input name="state" placeholder="Bihar" />
+            </label>
+            <label>
+              Occupation
+              <select name="occupation">
+                <option value="">Select</option>
+                <option>student</option>
+                <option>farmer</option>
+                <option>worker</option>
+                <option>self-employed</option>
+                <option>entrepreneur</option>
+                <option>unemployed</option>
+              </select>
+            </label>
+            <label>
+              Annual Income
+              <input name="income" type="number" min="0" placeholder="180000" />
+            </label>
+            <label>
+              Category
+              <select name="category">
+                <option value="">Select</option>
+                <option>General</option>
+                <option>OBC</option>
+                <option>SC</option>
+                <option>ST</option>
+                <option>EWS</option>
+                <option>EBC</option>
+              </select>
+            </label>
+            <label>
+              Gender
+              <select name="gender">
+                <option value="">Select</option>
+                <option>female</option>
+                <option>male</option>
+                <option>other</option>
+              </select>
+            </label>
+          </div>
+
+          <label class="question">
+            Question
+            <textarea name="question" rows="4" required>Can I get education financial help?</textarea>
+          </label>
+
+          <div class="examples">
+            <button type="button" data-question="I am a 21 year old OBC student from Bihar. Which scholarship can I get?">Scholarship</button>
+            <button type="button" data-question="My family income is low. Which health scheme can help with hospital treatment?">Health</button>
+            <button type="button" data-question="I am a farmer and need government income support.">Farmer</button>
+            <button type="button" data-question="I am a woman entrepreneur and need a business loan.">Business loan</button>
+          </div>
+
+          <button class="primary" type="submit">Ask CivicAid</button>
+        </form>
+
+        <section class="results" id="results">
+          <div class="empty">
+            <h2>Ask a question to start</h2>
+            <p>The answer will include matched schemes, eligibility checks, documents, steps, and source links.</p>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,287 @@
+:root {
+  color-scheme: light;
+  --bg: #f7f9fc;
+  --surface: #ffffff;
+  --text: #152033;
+  --muted: #607089;
+  --line: #dce3ee;
+  --primary: #1463ff;
+  --primary-dark: #0f4dc7;
+  --ok: #0f8a4b;
+  --warn: #a06500;
+  --bad: #bd1e2d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.shell {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 32px 0;
+}
+
+.hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--primary);
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 10px;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1.05;
+}
+
+h2 {
+  font-size: 1.1rem;
+}
+
+.subtitle {
+  max-width: 720px;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.status {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 10px 14px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.panel,
+.answer,
+.scheme,
+.empty {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  color: #344154;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 11px 12px;
+  color: var(--text);
+  font: inherit;
+  background: #fff;
+}
+
+textarea {
+  resize: vertical;
+}
+
+.question {
+  margin-top: 16px;
+}
+
+.examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0;
+}
+
+.examples button,
+.primary {
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.examples button {
+  background: #eef4ff;
+  color: var(--primary-dark);
+  padding: 8px 10px;
+}
+
+.primary {
+  width: 100%;
+  background: var(--primary);
+  color: #fff;
+  padding: 12px 16px;
+  font-weight: 750;
+}
+
+.primary:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.results {
+  display: grid;
+  gap: 14px;
+}
+
+.answer pre {
+  margin: 0;
+  white-space: pre-wrap;
+  font: inherit;
+  color: #263447;
+}
+
+.scheme h3 {
+  margin-bottom: 6px;
+}
+
+.meta {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+}
+
+.badge {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 4px 9px;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.likely {
+  background: #e9f8ef;
+  color: var(--ok);
+}
+
+.possible {
+  background: #fff4df;
+  color: var(--warn);
+}
+
+.unlikely {
+  background: #ffeaed;
+  color: var(--bad);
+}
+
+.checks {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.agent-steps {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 12px 0 16px;
+  background: #f8fbff;
+}
+
+.agent-steps h3 {
+  margin-bottom: 10px;
+  font-size: 0.95rem;
+}
+
+.agent-step {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding: 8px 0;
+  color: #344154;
+}
+
+.agent-step:first-of-type {
+  border-top: 0;
+}
+
+.check {
+  border-left: 3px solid var(--line);
+  padding-left: 10px;
+  color: #344154;
+}
+
+.check.pass {
+  border-color: var(--ok);
+}
+
+.check.fail {
+  border-color: var(--bad);
+}
+
+.check.unknown {
+  border-color: var(--warn);
+}
+
+a {
+  color: var(--primary-dark);
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .hero,
+  .workspace {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .status {
+    white-space: normal;
+  }
+}
+
+@media (max-width: 520px) {
+  .shell {
+    width: min(100% - 20px, 1180px);
+    padding: 18px 0;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

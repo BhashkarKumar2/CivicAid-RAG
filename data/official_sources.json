@@ -1,0 +1,126 @@
+[
+  {
+    "id": "pm-kisan",
+    "name": "PM-KISAN Samman Nidhi",
+    "category": "Agriculture",
+    "source_title": "PM-KISAN official portal",
+    "source_url": "https://pmkisan.gov.in/",
+    "source_urls": [
+      "https://www.pmkisan.gov.in/?hl=en-IN",
+      "https://pmkisan.gov.in/"
+    ],
+    "rules": {
+      "states": ["All India"],
+      "occupation": ["farmer"],
+      "min_age": 18,
+      "max_income": null,
+      "categories": ["General", "OBC", "SC", "ST", "EWS"]
+    },
+    "fallback": {
+      "summary": "Income support scheme providing financial assistance to eligible landholding farmer families.",
+      "benefits": ["Direct income support", "Installments transferred to bank account"],
+      "documents": ["Aadhaar card", "Bank account details", "Land ownership records", "Mobile number"],
+      "apply_steps": ["Visit the PM-KISAN portal", "Complete farmer registration", "Enter Aadhaar and land details", "Submit for verification"]
+    }
+  },
+  {
+    "id": "bihar-post-matric-scholarship",
+    "name": "Bihar Post Matric Scholarship",
+    "category": "Education",
+    "source_title": "Bihar Post Matric Scholarship official portal",
+    "source_url": "https://pmsonline.bihar.gov.in/Default.aspx",
+    "source_urls": [
+      "https://pmsonline.bihar.gov.in/Default.aspx",
+      "https://instpmsonline.bihar.gov.in/",
+      "https://instpmsonline.bihar.gov.in/pmsbcebc2223off/pms/faq.aspx"
+    ],
+    "rules": {
+      "states": ["Bihar"],
+      "occupation": ["student"],
+      "min_age": 15,
+      "max_age": 35,
+      "max_income": 250000,
+      "categories": ["OBC", "SC", "ST", "EBC"]
+    },
+    "fallback": {
+      "summary": "Scholarship support for eligible post-matric students from reserved and economically weaker categories in Bihar.",
+      "benefits": ["Tuition fee assistance", "Maintenance allowance", "Support for higher education expenses"],
+      "documents": ["Aadhaar card", "Income certificate", "Caste certificate", "Enrollment proof", "Bank account details"],
+      "apply_steps": ["Visit Bihar scholarship portal", "Create or login to student account", "Select scholarship scheme", "Upload required documents", "Submit application"]
+    }
+  },
+  {
+    "id": "ayushman-bharat-pmjay",
+    "name": "Ayushman Bharat PM-JAY",
+    "category": "Health",
+    "source_title": "Ayushman Bharat PM-JAY official portal",
+    "source_url": "https://nha.gov.in/PM-JAY.php",
+    "source_urls": [
+      "https://nha.gov.in/PM-JAY.php",
+      "https://pmjay.gov.in/"
+    ],
+    "rules": {
+      "states": ["All India"],
+      "occupation": ["worker", "farmer", "student", "unemployed", "self-employed"],
+      "min_age": 0,
+      "max_income": 300000,
+      "categories": ["General", "OBC", "SC", "ST", "EWS"]
+    },
+    "fallback": {
+      "summary": "Health insurance cover for eligible low-income families for secondary and tertiary hospitalization.",
+      "benefits": ["Hospitalization coverage", "Cashless treatment at empanelled hospitals", "Family floater coverage"],
+      "documents": ["Aadhaar card", "Ration card", "Family ID or SECC details", "Mobile number"],
+      "apply_steps": ["Check eligibility on official PM-JAY portal", "Visit nearest empanelled hospital or CSC", "Verify identity documents", "Generate Ayushman card if eligible"]
+    }
+  },
+  {
+    "id": "stand-up-india",
+    "name": "Stand-Up India Scheme",
+    "category": "Entrepreneurship",
+    "source_title": "Stand-Up India official portal",
+    "source_url": "https://www.standupmitra.in/",
+    "source_urls": [
+      "https://www.myscheme.gov.in/schemes/sui",
+      "https://www.standupmitra.in/"
+    ],
+    "rules": {
+      "states": ["All India"],
+      "occupation": ["self-employed", "entrepreneur", "unemployed"],
+      "min_age": 18,
+      "max_income": null,
+      "categories": ["SC", "ST", "Women"]
+    },
+    "fallback": {
+      "summary": "Bank loan support for SC, ST, and women entrepreneurs setting up greenfield enterprises.",
+      "benefits": ["Bank loans for new enterprises", "Support for manufacturing, services, trading, and allied agriculture"],
+      "documents": ["Identity proof", "Address proof", "Caste certificate if applicable", "Business plan", "Bank account details"],
+      "apply_steps": ["Visit Stand-Up India portal", "Share entrepreneur and business details", "Connect with selected bank branch", "Submit business plan and documents"]
+    }
+  },
+  {
+    "id": "pmay-urban",
+    "name": "Pradhan Mantri Awas Yojana Urban",
+    "category": "Housing",
+    "source_title": "PMAY Urban official portal",
+    "source_url": "https://pmaymis.gov.in/",
+    "source_urls": [
+      "https://pmaymis.gov.in/",
+      "https://pmaymis.gov.in/pmaymis2_2024/PMAY_SURVEY/EligiblityCheck.aspx",
+      "https://pmaymis.gov.in/pmaymis2_2024/faq.html",
+      "https://pmaymis.gov.in/pmaymis2_2024/interest-subsidy-scheme-ISS.html"
+    ],
+    "rules": {
+      "states": ["All India"],
+      "occupation": ["worker", "self-employed", "unemployed", "student"],
+      "min_age": 18,
+      "max_income": 600000,
+      "categories": ["General", "OBC", "SC", "ST", "EWS"]
+    },
+    "fallback": {
+      "summary": "Housing assistance for eligible urban households, including economically weaker sections and low-income groups.",
+      "benefits": ["Housing subsidy", "Support for affordable housing", "Credit-linked subsidy subject to conditions"],
+      "documents": ["Aadhaar card", "Income proof", "Address proof", "Bank account details", "Property documents if applicable"],
+      "apply_steps": ["Visit PMAY Urban portal or local urban body", "Choose applicable category", "Fill household and income details", "Submit documents for verification"]
+    }
+  }
+]
