@@ -38,6 +38,7 @@ def health():
         "status": "ok",
         "schemes": len(retriever.schemes),
         "data_source": "official" if DATA_PATH == OFFICIAL_DATA_PATH else "seed",
+        "rag_framework": "langchain",
         "langfuse": "enabled" if tracer.enabled else "disabled",
     }
 

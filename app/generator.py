@@ -1,5 +1,7 @@
 import os
 
+from .langchain_pipeline import build_template_answer_with_langchain
+
 
 def build_answer(
     question: str,
@@ -80,40 +82,47 @@ def _template_answer(results: list[dict], web_sources: list[dict], guidance: dic
         return "I could not find a matching scheme in the current dataset. Try adding your state, occupation, age, income, and category."
 
     weak_local = bool(results) and results[0]["eligibility"]["status"] == "unlikely"
-    lines = []
+    guidance_lines = []
     answer_guidance = guidance.get("answer_guidance", [])
     if answer_guidance:
-        lines.append("Before you act:")
+        guidance_lines.append("Before you act:")
         for item in answer_guidance[:3]:
-            lines.append(f"- {item}")
-        lines.append("")
+            guidance_lines.append(f"- {item}")
+        guidance_lines.append("")
 
+    source_lines = []
     if web_sources:
         if weak_local:
-            lines.append("The local official dataset did not find a likely eligible match, so I discovered these official web sources at question time:")
+            source_lines.append("The local official dataset did not find a likely eligible match, so I discovered these official web sources at question time:")
         else:
-            lines.append("I found these official web sources at question time. Use these first for this topic:")
+            source_lines.append("I found these official web sources at question time. Use these first for this topic:")
         for index, source in enumerate(web_sources, start=1):
-            lines.append("")
-            lines.append(f"{index}. {source['title']}")
-            lines.append(f"   URL: {source['url']}")
+            source_lines.append("")
+            source_lines.append(f"{index}. {source['title']}")
+            source_lines.append(f"   URL: {source['url']}")
             if source.get("snippet"):
-                lines.append(f"   What it says: {source['snippet']}")
-        lines.append("")
-        lines.append("Closest local dataset matches are listed below, but treat them as lower confidence if they are not on the same topic:")
+                source_lines.append(f"   What it says: {source['snippet']}")
+        source_lines.append("")
+        source_lines.append("Closest local dataset matches are listed below, but treat them as lower confidence if they are not on the same topic:")
     else:
-        lines.append("Based on the current official scheme dataset, these are the strongest matches:")
+        source_lines.append("Based on the current official scheme dataset, these are the strongest matches:")
 
+    local_lines = []
     for index, item in enumerate(results, start=1):
         scheme = item["scheme"]
         eligibility = item["eligibility"]
-        lines.append("")
-        lines.append(f"{index}. {scheme['name']} - {eligibility['status']} ({eligibility['score']}% profile match)")
-        lines.append(f"   Why: {scheme['summary']}")
-        lines.append(f"   Documents: {', '.join(scheme['documents'][:5])}")
-        lines.append(f"   How to apply: {'; '.join(scheme['apply_steps'][:4])}")
-        lines.append(f"   Source: {scheme['source_title']} ({scheme['source_url']})")
-    return "\n".join(lines)
+        local_lines.append("")
+        local_lines.append(f"{index}. {scheme['name']} - {eligibility['status']} ({eligibility['score']}% profile match)")
+        local_lines.append(f"   Why: {scheme['summary']}")
+        local_lines.append(f"   Documents: {', '.join(scheme['documents'][:5])}")
+        local_lines.append(f"   How to apply: {'; '.join(scheme['apply_steps'][:4])}")
+        local_lines.append(f"   Source: {scheme['source_title']} ({scheme['source_url']})")
+
+    return build_template_answer_with_langchain(
+        guidance_block="\n".join(guidance_lines),
+        source_block="\n".join(source_lines),
+        local_block="\n".join(local_lines),
+    )
 
 
 class _null_observation:
