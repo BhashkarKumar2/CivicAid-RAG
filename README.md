@@ -224,6 +224,9 @@ When enabled, each `/api/ask` call records one Langfuse trace row:
 
 - Root trace/observation: `civicaid-rag-agent`
 - `skill_files_read`: the local `skills/*/SKILL.md` files used by the request
+- `tools_used`: a top-level list of agent tools, status, inputs, outputs, and duration
+- `tool_usage_summary`: a readable one-line-per-tool summary for the trace output panel
+- `model_tool_usage`: whether the LLM provider itself made tool calls
 - `tool_calls`: the project tools called by the agent
 - `execution_log`: per-step inputs, outputs, status, nesting, and duration
 - Final answer and response summary

@@ -30,6 +30,13 @@ TOOL_FILES = {
     "discover-official-sources": "tools/discover_official_sources.py",
     "generate-answer": "tools/generate_answer.py",
 }
+TOOL_DISPLAY_NAMES = {
+    "retrieve-schemes": "Retrieve Schemes",
+    "check-eligibility": "Check Eligibility",
+    "corrective-retrieval": "Corrective Retrieval",
+    "discover-official-sources": "Discover Official Sources",
+    "generate-answer": "Generate Answer",
+}
 
 TOPIC_KEYWORDS = {
     "education": {"scholarship", "student", "college", "school", "education", "matric", "छात्र", "छात्रवृत्ति"},
@@ -136,6 +143,9 @@ class CivicAidAgent:
             summary = self._response_summary(results, web_sources, query_insights)
             next_actions = self._next_actions(profile_summary, query_insights, results, web_sources)
             trace_url = tracer.trace_url()
+            execution_log = tracer.execution_log()
+            tools_used = self._tools_used_for_trace(steps, execution_log)
+            model_tool_usage = self._model_tool_usage_for_trace(execution_log)
             response_payload = {
                 "question": request.question,
                 "answer": answer,
@@ -151,12 +161,15 @@ class CivicAidAgent:
             }
             tracer.update_current(
                 output={
+                    "tools_used": tools_used,
+                    "tool_usage_summary": self._tool_usage_summary(tools_used),
+                    "model_tool_usage": model_tool_usage,
                     "top_scheme": results[0]["scheme"]["id"] if results else None,
                     "web_source_count": len(web_sources),
                     "summary": summary,
                     "agent_steps": [step.model_dump() for step in steps],
                     "tool_calls": self._tool_calls_for_trace(steps),
-                    "execution_log": tracer.execution_log(),
+                    "execution_log": execution_log,
                     "answer": answer,
                 }
             )
@@ -203,6 +216,48 @@ class CivicAidAgent:
             }
             for step in steps
         ]
+
+    @staticmethod
+    def _tools_used_for_trace(steps: list[AgentStep], execution_log: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        executed_by_name = {
+            str(entry.get("name", "")).removeprefix("skill:"): entry
+            for entry in execution_log
+            if str(entry.get("name", "")).startswith("skill:")
+        }
+        return [
+            {
+                "name": step.skill,
+                "display_name": TOOL_DISPLAY_NAMES.get(step.skill, step.skill),
+                "tool_file": TOOL_FILES.get(step.skill),
+                "called": step.status != "skipped",
+                "status": step.status,
+                "duration_ms": executed_by_name.get(step.skill, {}).get("duration_ms"),
+                "input": executed_by_name.get(step.skill, {}).get("input"),
+                "output": step.detail,
+            }
+            for step in steps
+        ]
+
+    @staticmethod
+    def _tool_usage_summary(tools_used: list[dict[str, Any]]) -> str:
+        lines = ["Agent tools used in this request:"]
+        for tool in tools_used:
+            state = "called" if tool["called"] else "skipped"
+            duration = f" in {tool['duration_ms']} ms" if tool.get("duration_ms") is not None else ""
+            lines.append(f"- {tool['display_name']} ({tool['name']}): {state}, {tool['status']}{duration}")
+        return "\n".join(lines)
+
+    @staticmethod
+    def _model_tool_usage_for_trace(execution_log: list[dict[str, Any]]) -> dict[str, Any]:
+        answer_engine = "gemini" if any(entry.get("name") == "gemini-answer" for entry in execution_log) else "template"
+        return {
+            "answer_engine": answer_engine,
+            "provider_native_tool_calls": [],
+            "note": (
+                "The LLM provider did not call tools directly. CivicAid's agent called the project tools listed "
+                "in tools_used before answer generation."
+            ),
+        }
 
     def _retrieve(self, request: AskRequest, steps: list[AgentStep]):
         with tracer.observation("skill:retrieve-schemes", input={"question": request.question, "top_k": request.top_k}):
