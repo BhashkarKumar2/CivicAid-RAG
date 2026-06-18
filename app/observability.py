@@ -1,6 +1,14 @@
 import os
+import uuid
+from contextvars import ContextVar
 from contextlib import contextmanager, nullcontext
 from typing import Any
+
+from langfuse.types import TraceContext
+
+
+_active_trace_id: ContextVar[str | None] = ContextVar("civicaid_langfuse_trace_id", default=None)
+_active_observation_stack: ContextVar[tuple[str, ...]] = ContextVar("civicaid_langfuse_observation_stack", default=())
 
 
 def langfuse_enabled() -> bool:
@@ -34,19 +42,52 @@ class LangfuseTracer:
             yield None
             return
 
+        trace_token = None
+        stack_token = None
+        trace_context = kwargs.pop("trace_context", None)
+        active_trace_id = _active_trace_id.get()
+        observation_stack = _active_observation_stack.get()
+
+        if trace_context is None:
+            if active_trace_id is None:
+                active_trace_id = uuid.uuid4().hex
+                trace_token = _active_trace_id.set(active_trace_id)
+
+            trace_context = TraceContext(trace_id=active_trace_id)
+            if observation_stack:
+                trace_context["parent_span_id"] = observation_stack[-1]
+        elif trace_context.get("trace_id") and active_trace_id is None:
+            trace_token = _active_trace_id.set(trace_context["trace_id"])
+
         try:
             with self._client.start_as_current_observation(
                 name=name,
                 as_type=as_type,
+                trace_context=trace_context,
                 **kwargs,
             ) as observation:
+                observation_id = getattr(observation, "id", None)
+                if observation_id:
+                    stack_token = _active_observation_stack.set((*observation_stack, observation_id))
                 yield observation
         except TypeError:
-            with self._client.start_as_current_observation(name=name, as_type=as_type) as observation:
+            with self._client.start_as_current_observation(
+                name=name,
+                as_type=as_type,
+                trace_context=trace_context,
+            ) as observation:
+                observation_id = getattr(observation, "id", None)
+                if observation_id:
+                    stack_token = _active_observation_stack.set((*observation_stack, observation_id))
                 yield observation
         except Exception:
             with nullcontext() as empty:
                 yield empty
+        finally:
+            if stack_token is not None:
+                _active_observation_stack.reset(stack_token)
+            if trace_token is not None:
+                _active_trace_id.reset(trace_token)
 
     def update_current(self, **kwargs):
         if not self.enabled or not self._client:
@@ -60,7 +101,7 @@ class LangfuseTracer:
         if not self.enabled or not self._client:
             return None
         try:
-            return self._client.get_trace_url()
+            return self._client.get_trace_url(trace_id=_active_trace_id.get())
         except Exception:
             return None
 
