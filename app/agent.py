@@ -1,4 +1,6 @@
 from dataclasses import dataclass, field
+import hashlib
+from pathlib import Path
 import re
 from typing import Any
 
@@ -13,6 +15,21 @@ from tools.retrieve_schemes import retrieve_schemes
 
 
 PROFILE_FIELDS = ("age", "state", "occupation", "income", "category", "gender")
+BASE_DIR = Path(__file__).resolve().parent.parent
+TRACE_SKILLS = (
+    "retrieve-schemes",
+    "check-eligibility",
+    "corrective-retrieval",
+    "discover-official-sources",
+    "generate-answer",
+)
+TOOL_FILES = {
+    "retrieve-schemes": "tools/retrieve_schemes.py",
+    "check-eligibility": "tools/check_eligibility.py",
+    "corrective-retrieval": "tools/corrective_retrieval.py",
+    "discover-official-sources": "tools/discover_official_sources.py",
+    "generate-answer": "tools/generate_answer.py",
+}
 
 TOPIC_KEYWORDS = {
     "education": {"scholarship", "student", "college", "school", "education", "matric", "छात्र", "छात्रवृत्ति"},
@@ -59,6 +76,7 @@ class CivicAidAgent:
         steps: list[AgentStep] = []
         profile_summary = self._profile_summary(request.profile)
         query_insights = self._query_insights(request.question, profile_summary)
+        skill_files_read = self._skill_files_for_trace()
         trace_input = {
             "question": request.question,
             "top_k": request.top_k,
@@ -66,6 +84,10 @@ class CivicAidAgent:
             "query_insights": query_insights,
             "session_id": request.session_id,
             "user_id": request.user_id,
+            "skill_files_read": [
+                {"skill": item["skill"], "path": item["path"], "sha256": item["sha256"]}
+                for item in skill_files_read
+            ],
         }
 
         with tracer.observation(
@@ -75,13 +97,9 @@ class CivicAidAgent:
                 "feature": "agentic-scheme-eligibility-rag",
                 "session_id": request.session_id,
                 "user_id": request.user_id,
-                "skills": [
-                    "retrieve-schemes",
-                    "discover-official-sources",
-                    "check-eligibility",
-                    "corrective-retrieval",
-                    "generate-answer",
-                ],
+                "single_row_trace": True,
+                "skills": list(TRACE_SKILLS),
+                "skill_files_read": skill_files_read,
             },
         ):
             raw_results = self._retrieve(request, steps)
@@ -124,7 +142,9 @@ class CivicAidAgent:
                     "web_source_count": len(web_sources),
                     "summary": summary,
                     "agent_steps": [step.model_dump() for step in steps],
-                    "answer_preview": answer[:500],
+                    "tool_calls": self._tool_calls_for_trace(steps),
+                    "execution_log": tracer.execution_log(),
+                    "answer": answer,
                 }
             )
             tracer.flush()
@@ -142,6 +162,46 @@ class CivicAidAgent:
                 "trace_url": trace_url,
                 "session_id": request.session_id,
             }
+
+    @staticmethod
+    def _skill_files_for_trace() -> list[dict[str, Any]]:
+        records = []
+        for skill in TRACE_SKILLS:
+            relative_path = Path("skills") / skill / "SKILL.md"
+            path = BASE_DIR / relative_path
+            try:
+                content = path.read_text(encoding="utf-8")
+                status = "read"
+            except OSError as exc:
+                content = ""
+                status = "error"
+                error = str(exc)
+            else:
+                error = None
+
+            record = {
+                "skill": skill,
+                "path": relative_path.as_posix(),
+                "status": status,
+                "sha256": hashlib.sha256(content.encode("utf-8")).hexdigest() if content else None,
+                "content": content,
+            }
+            if error:
+                record["error"] = error
+            records.append(record)
+        return records
+
+    @staticmethod
+    def _tool_calls_for_trace(steps: list[AgentStep]) -> list[dict[str, Any]]:
+        return [
+            {
+                "skill": step.skill,
+                "tool_file": TOOL_FILES.get(step.skill),
+                "status": step.status,
+                "detail": step.detail,
+            }
+            for step in steps
+        ]
 
     def _retrieve(self, request: AskRequest, steps: list[AgentStep]):
         with tracer.observation("skill:retrieve-schemes", input={"question": request.question, "top_k": request.top_k}):

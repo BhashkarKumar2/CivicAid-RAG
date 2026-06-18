@@ -220,13 +220,13 @@ For US cloud, use:
 LANGFUSE_BASE_URL=https://us.cloud.langfuse.com
 ```
 
-When enabled, each `/api/ask` call records:
+When enabled, each `/api/ask` call records one Langfuse trace row:
 
-- Root trace: `civicaid-rag-ask`
-- Retrieval span: `retrieve-schemes`
-- Corrective retry span when used: `corrective-retrieval`
-- Eligibility span: `check-eligibility`
-- Answer span/generation: `template-answer` or `gemini-answer`
+- Root trace/observation: `civicaid-rag-agent`
+- `skill_files_read`: the local `skills/*/SKILL.md` files used by the request
+- `tool_calls`: the project tools called by the agent
+- `execution_log`: per-step inputs, outputs, status, nesting, and duration
+- Final answer and response summary
 
 The API response includes `trace_url` when Langfuse credentials are active.
 
