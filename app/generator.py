@@ -1,20 +1,34 @@
 import os
 
 
-def build_answer(question: str, results: list[dict], web_sources: list[dict] | None = None, tracer=None) -> str:
+def build_answer(
+    question: str,
+    results: list[dict],
+    web_sources: list[dict] | None = None,
+    guidance: dict | None = None,
+    tracer=None,
+) -> str:
     web_sources = web_sources or []
+    guidance = guidance or {}
     if os.getenv("GEMINI_API_KEY"):
-        generated = _gemini_answer(question, results, web_sources, tracer=tracer)
+        generated = _gemini_answer(question, results, web_sources, guidance, tracer=tracer)
         if generated:
             return generated
-    with (tracer.observation("template-answer", input={"result_count": len(results), "web_source_count": len(web_sources)}) if tracer else _null_observation()):
-        answer = _template_answer(results, web_sources)
+    with (
+        tracer.observation(
+            "template-answer",
+            input={"result_count": len(results), "web_source_count": len(web_sources), "guidance": guidance},
+        )
+        if tracer
+        else _null_observation()
+    ):
+        answer = _template_answer(results, web_sources, guidance)
         if tracer:
             tracer.update_current(output={"answer_preview": answer[:500]})
         return answer
 
 
-def _gemini_answer(question: str, results: list[dict], web_sources: list[dict], tracer=None) -> str | None:
+def _gemini_answer(question: str, results: list[dict], web_sources: list[dict], guidance: dict, tracer=None) -> str | None:
     try:
         import google.generativeai as genai
 
@@ -37,12 +51,14 @@ def _gemini_answer(question: str, results: list[dict], web_sources: list[dict], 
             f"Extract: {source.get('text_excerpt', '')}"
             for source in web_sources
         )
+        guidance_context = "\n".join(guidance.get("answer_guidance", [])) or "No extra guidance."
         prompt = (
             "You are CivicAid, a careful government scheme assistant. "
             "Answer only from the provided context. Include eligibility reasoning, documents, steps, and citations. "
             "When discovered official web context is present, prioritize it over local scheme matches that are not on the same topic.\n\n"
             f"Question: {question}\n\nLocal scheme context:\n{context or 'No strong local scheme context.'}"
             f"\n\nDiscovered official web context:\n{web_context or 'No web sources discovered.'}"
+            f"\n\nOperational guidance:\n{guidance_context}"
         )
         observation = tracer.observation(
             "gemini-answer",
@@ -59,12 +75,19 @@ def _gemini_answer(question: str, results: list[dict], web_sources: list[dict], 
         return None
 
 
-def _template_answer(results: list[dict], web_sources: list[dict]) -> str:
+def _template_answer(results: list[dict], web_sources: list[dict], guidance: dict) -> str:
     if not results and not web_sources:
         return "I could not find a matching scheme in the current dataset. Try adding your state, occupation, age, income, and category."
 
     weak_local = bool(results) and results[0]["eligibility"]["status"] == "unlikely"
     lines = []
+    answer_guidance = guidance.get("answer_guidance", [])
+    if answer_guidance:
+        lines.append("Before you act:")
+        for item in answer_guidance[:3]:
+            lines.append(f"- {item}")
+        lines.append("")
+
     if web_sources:
         if weak_local:
             lines.append("The local official dataset did not find a likely eligible match, so I discovered these official web sources at question time:")

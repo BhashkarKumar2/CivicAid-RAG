@@ -8,3 +8,5 @@ __pycache__/
 .git/
 tests_failure_cases.py
 tests_smoke.py
+tests_case_suite.py
+*.log

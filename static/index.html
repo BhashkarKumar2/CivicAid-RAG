@@ -7,89 +7,114 @@
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
-    <main class="shell">
-      <section class="hero">
-        <div>
-          <p class="eyebrow">Explainable Government Scheme Assistant</p>
-          <h1>CivicAid RAG</h1>
-          <p class="subtitle">
-            Find schemes, check eligibility, and get document/application guidance with source citations.
-          </p>
+    <main class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">CA</span>
+          <div>
+            <p class="eyebrow">CivicAid RAG</p>
+            <h1>Scheme eligibility workspace</h1>
+          </div>
         </div>
-        <div class="status" id="status">Checking API...</div>
-      </section>
+        <div class="system-status">
+          <span class="status-pill" id="status">Checking API</span>
+          <span class="data-pill" id="dataSource">Loading data</span>
+        </div>
+      </header>
 
       <section class="workspace">
-        <form class="panel" id="askForm">
-          <h2>Citizen Profile</h2>
-          <div class="grid">
+        <form class="profile-panel" id="askForm">
+          <div class="panel-head">
+            <div>
+              <h2>Citizen Profile</h2>
+              <p id="profileHint">Fill more fields for sharper eligibility checks.</p>
+            </div>
+            <span class="score-chip" id="profileScore">0%</span>
+          </div>
+
+          <div class="meter" aria-hidden="true">
+            <span id="profileMeter"></span>
+          </div>
+
+          <div class="field-grid">
             <label>
               Age
-              <input name="age" type="number" min="0" placeholder="21" />
+              <input name="age" type="number" min="0" placeholder="21" inputmode="numeric" />
             </label>
             <label>
               State
-              <input name="state" placeholder="Bihar" />
+              <input name="state" list="stateOptions" placeholder="Bihar" />
+              <datalist id="stateOptions"></datalist>
             </label>
             <label>
               Occupation
-              <select name="occupation">
+              <select name="occupation" id="occupationSelect">
                 <option value="">Select</option>
-                <option>student</option>
-                <option>farmer</option>
-                <option>worker</option>
-                <option>self-employed</option>
-                <option>entrepreneur</option>
-                <option>unemployed</option>
               </select>
             </label>
             <label>
               Annual Income
-              <input name="income" type="number" min="0" placeholder="180000" />
+              <input name="income" type="number" min="0" placeholder="180000" inputmode="numeric" />
             </label>
             <label>
               Category
-              <select name="category">
+              <select name="category" id="categorySelect">
                 <option value="">Select</option>
-                <option>General</option>
-                <option>OBC</option>
-                <option>SC</option>
-                <option>ST</option>
-                <option>EWS</option>
-                <option>EBC</option>
               </select>
             </label>
             <label>
               Gender
-              <select name="gender">
+              <select name="gender" id="genderSelect">
                 <option value="">Select</option>
-                <option>female</option>
-                <option>male</option>
-                <option>other</option>
               </select>
             </label>
           </div>
 
-          <label class="question">
+          <label class="question-field">
             Question
-            <textarea name="question" rows="4" required>Can I get education financial help?</textarea>
+            <textarea name="question" rows="5" required>Can I get education financial help?</textarea>
           </label>
 
-          <div class="examples">
-            <button type="button" data-question="I am a 21 year old OBC student from Bihar. Which scholarship can I get?">Scholarship</button>
-            <button type="button" data-question="My family income is low. Which health scheme can help with hospital treatment?">Health</button>
-            <button type="button" data-question="I am a farmer and need government income support.">Farmer</button>
-            <button type="button" data-question="I am a woman entrepreneur and need a business loan.">Business loan</button>
+          <div class="query-controls">
+            <label>
+              Results
+              <select name="top_k">
+                <option value="3" selected>3 matches</option>
+                <option value="4">4 matches</option>
+                <option value="5">5 matches</option>
+              </select>
+            </label>
           </div>
 
-          <button class="primary" type="submit">Ask CivicAid</button>
+          <div class="examples" id="examples"></div>
+
+          <button class="primary" type="submit">
+            <span id="submitLabel">Ask CivicAid</span>
+          </button>
         </form>
 
-        <section class="results" id="results">
-          <div class="empty">
-            <h2>Ask a question to start</h2>
-            <p>The answer will include matched schemes, eligibility checks, documents, steps, and source links.</p>
+        <section class="response-panel">
+          <div class="summary-strip" id="summaryStrip">
+            <div>
+              <span class="summary-label">Top match</span>
+              <strong>Waiting for question</strong>
+            </div>
+            <div>
+              <span class="summary-label">Profile</span>
+              <strong>0% complete</strong>
+            </div>
+            <div>
+              <span class="summary-label">Sources</span>
+              <strong>Not checked</strong>
+            </div>
           </div>
+
+          <section class="results" id="results" aria-live="polite">
+            <div class="empty-state">
+              <h2>Ask a scheme question</h2>
+              <p>The workspace will return a ranked answer, profile checks, missing fields, next actions, and official source links.</p>
+            </div>
+          </section>
         </section>
       </section>
     </main>
