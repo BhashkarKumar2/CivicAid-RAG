@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -18,12 +19,25 @@ OFFICIAL_DATA_PATH = BASE_DIR / "data" / "official_schemes.json"
 SEED_DATA_PATH = BASE_DIR / "data" / "schemes.json"
 DATA_PATH = OFFICIAL_DATA_PATH if OFFICIAL_DATA_PATH.exists() else SEED_DATA_PATH
 STATIC_DIR = BASE_DIR / "static"
+DEFAULT_CORS_ORIGINS = [
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+    "https://civicaid-rag.vercel.app",
+    "https://civicaid-rag.onrender.com",
+]
+
+
+def cors_origins() -> list[str]:
+    configured = os.getenv("CIVICAID_CORS_ORIGINS", "")
+    if not configured.strip():
+        return DEFAULT_CORS_ORIGINS
+    return [origin.strip() for origin in configured.split(",") if origin.strip()]
 
 app = FastAPI(title="CivicAid RAG", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=cors_origins(),
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

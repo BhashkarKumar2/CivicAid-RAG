@@ -4,6 +4,7 @@ import ssl
 import sys
 from html.parser import HTMLParser
 from pathlib import Path
+from urllib.parse import urlparse
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -44,6 +45,18 @@ def normalize_text(text: str) -> str:
     return text.strip()
 
 
+def _validate_http_url(url: str) -> None:
+    parsed = urlparse(url)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise ValueError("Only absolute HTTP(S) URLs can be fetched")
+
+
+def _urlopen_http(request: Request, *, timeout: int, context: ssl.SSLContext):
+    _validate_http_url(request.full_url)
+    # Bandit B310 is acceptable here because the scheme is validated immediately above.
+    return urlopen(request, timeout=timeout, context=context)  # nosec B310
+
+
 def fetch_page_text(url: str, timeout: int = 45) -> tuple[str, str | None]:
     request = Request(
         url,
@@ -56,7 +69,7 @@ def fetch_page_text(url: str, timeout: int = 45) -> tuple[str, str | None]:
     last_error = None
     for _ in range(2):
         try:
-            with urlopen(request, timeout=timeout, context=context) as response:
+            with _urlopen_http(request, timeout=timeout, context=context) as response:
                 body = response.read(2_000_000)
                 charset = response.headers.get_content_charset() or "utf-8"
                 html = body.decode(charset, errors="replace")
@@ -65,7 +78,7 @@ def fetch_page_text(url: str, timeout: int = 45) -> tuple[str, str | None]:
                 text = parser.text()
                 if text:
                     return text, None
-        except (HTTPError, URLError, TimeoutError, OSError) as error:
+        except (HTTPError, URLError, TimeoutError, OSError, ValueError) as error:
             last_error = str(error)
     return "", last_error or "empty response"
 

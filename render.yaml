@@ -18,3 +18,5 @@ services:
         sync: false
       - key: MYSCHEME_API_KEY
         sync: false
+      - key: CIVICAID_CORS_ORIGINS
+        value: https://civicaid-rag.vercel.app,https://civicaid-rag.onrender.com

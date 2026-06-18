@@ -1,36 +1,46 @@
 # CivicAid RAG
 
-Explainable government scheme eligibility assistant built as a low-cost RAG MVP.
+CivicAid RAG is an explainable government-scheme eligibility assistant. It combines a small official-source scheme dataset, LangChain-backed retrieval, deterministic eligibility checks, optional Gemini answer generation, and single-row Langfuse tracing.
+
+Production URLs:
+
+- Vercel: `https://civicaid-rag.vercel.app`
+- Render: `https://civicaid-rag.onrender.com`
 
 ## What It Does
 
-- Retrieves relevant government schemes from a local dataset.
-- Checks eligibility using profile fields like age, state, occupation, income, category, and gender.
-- Returns documents, application steps, and official source citations.
-- Uses pure-Python hybrid retrieval by default, so no paid API is required.
-- Optionally uses Gemini if `GEMINI_API_KEY` is set.
-- Runs through an explicit project-local agent workflow with skill files.
+- Finds relevant government schemes for a citizen question.
+- Checks eligibility from profile fields: age, state, occupation, income, category, and gender.
+- Returns documents, application steps, confidence signals, and official source citations.
+- Uses LangChain for the RAG retrieval adapter and answer-template runnable.
+- Uses deterministic rule checks for eligibility so results are explainable.
+- Optionally uses Gemini when `GEMINI_API_KEY` is set; otherwise it falls back to template generation.
+- Records one Langfuse trace row per `/api/ask` request when Langfuse credentials are configured.
 
-## Stack
+## Architecture
 
-- FastAPI
-- Static HTML/CSS/JS frontend
-- Local JSON scheme dataset
-- BM25-style keyword retrieval + query expansion
-- Rule-based eligibility scoring
-- Optional Gemini answer generation
-- Optional Langfuse tracing
-- Optional myScheme API-backed official source discovery
+Runtime entry points:
 
-## Agent Skills
+- FastAPI app: `app/main.py`
+- Vercel adapter: `app/app.py`
+- Frontend: `static/index.html`, `static/app.js`, `static/styles.css`
+- Agent orchestration: `app/agent.py`
+- LangChain pipeline: `app/langchain_pipeline.py`
+- Observability wrapper: `app/observability.py`
 
-Project-local skills live in:
+RAG and tool flow:
 
-```text
-skills/
-```
+1. `retrieve-schemes` uses `SchemeLangChainRetriever`, a LangChain `BaseRetriever` adapter over the local hybrid retriever.
+2. `check-eligibility` applies deterministic profile rules to retrieved schemes.
+3. `corrective-retrieval` reruns retrieval only when the first result is weak.
+4. `discover-official-sources` searches official government sources when local context is weak or off-topic.
+5. `generate-answer` uses Gemini if configured, otherwise a LangChain `PromptTemplate` runnable builds the template answer.
 
-Current skills:
+LangGraph is not currently used because this is still a predictable fixed RAG workflow. Add LangGraph only when the app needs stateful branching, multi-turn memory, retries across graph nodes, or human-in-the-loop control.
+
+## Agent Skills And Tools
+
+Project-local skill docs live in `skills/`:
 
 - `skills/ingest-official-sources/SKILL.md`
 - `skills/discover-official-sources/SKILL.md`
@@ -39,23 +49,7 @@ Current skills:
 - `skills/corrective-retrieval/SKILL.md`
 - `skills/generate-answer/SKILL.md`
 
-The runtime agent is implemented in:
-
-```text
-app/agent.py
-```
-
-Every `/api/ask` response includes `agent_steps`, and the UI shows the skills used for that run.
-
-## Agent Tools
-
-Executable tool wrappers live in:
-
-```text
-tools/
-```
-
-Current tools:
+Executable wrappers live in `tools/`:
 
 - `tools/ingest_official_sources.py`
 - `tools/discover_official_sources.py`
@@ -65,30 +59,9 @@ Current tools:
 - `tools/generate_answer.py`
 - `tools/observability.py`
 
-The agent in `app/agent.py` orchestrates these tools according to the skill descriptions.
+Every `/api/ask` response includes `agent_steps`, and the UI shows the skills used for that run.
 
-At question time, the agent can now discover official web sources if local retrieval is weak. The discovery tool keeps only official government domains such as `.gov.in`, `myscheme.gov.in`, `india.gov.in`, and known official scheme portals.
-
-Discovery order:
-
-1. Query the official myScheme search API when `MYSCHEME_API_KEY` is set.
-2. If myScheme has no result, fall back to web search parsing.
-3. Keep only official government URLs.
-4. Fetch page text and pass it into answer generation as temporary RAG context.
-
-Example out-of-dataset query:
-
-```text
-Tell me about Ladli Behna scheme eligibility and documents
-```
-
-The agent discovers:
-
-```text
-https://www.myscheme.gov.in/schemes/cmlby
-```
-
-## Official Source Ingestion
+## Data
 
 The app prefers generated official-source data:
 
@@ -96,39 +69,28 @@ The app prefers generated official-source data:
 data/official_schemes.json
 ```
 
-If that file is missing, it falls back to:
+If missing, it falls back to:
 
 ```text
 data/schemes.json
 ```
 
-Run ingestion:
+Run official-source ingestion:
 
 ```bash
 python tools/ingest_official_sources.py
 ```
 
-Source registry:
+The source registry is `data/official_sources.json`, and the ingestion report is written to `data/official_ingestion_report.json`.
 
-```text
-data/official_sources.json
-```
-
-Ingestion report:
-
-```text
-data/official_ingestion_report.json
-```
-
-The report records every official URL fetched, character counts, and any fetch errors.
-
-## Run Locally
+## Local Setup
 
 ```bash
 cd CivicAid-RAG
 python -m venv .venv
 .\.venv\Scripts\activate
 pip install -r requirements.txt
+copy .env.example .env
 uvicorn app.main:app --reload
 ```
 
@@ -138,98 +100,48 @@ Open:
 http://127.0.0.1:8000
 ```
 
-## Optional Gemini
+## Environment Variables
 
-```bash
-pip install google-generativeai
-$env:GEMINI_API_KEY="your_api_key"
-uvicorn app.main:app --reload
-```
-
-Without Gemini, the app still works using a deterministic template answer.
-
-## Optional myScheme Discovery
-
-Official web discovery works without a key for seeded official sources such as PM Surya Ghar. To enable broader myScheme API search, set:
+Required for Langfuse tracing:
 
 ```text
-MYSCHEME_API_KEY=your_myscheme_api_key
-```
-
-## Deploy
-
-### Render
-
-This repo includes `render.yaml` for a Python web service.
-
-Render settings:
-
-```text
-Build Command: pip install -r requirements.txt
-Start Command: uvicorn app.main:app --host 0.0.0.0 --port $PORT
-```
-
-CLI flow after installing and logging in to the Render CLI:
-
-```bash
-render services create --type web_service --name civicaid-rag --repo https://github.com/BhashkarKumar2/CivicAid-RAG --runtime python --build-command "pip install -r requirements.txt" --start-command "uvicorn app.main:app --host 0.0.0.0 --port $PORT" --plan free
-```
-
-Set production secrets in the Render dashboard or CLI environment variables, not in Git.
-
-### Vercel
-
-Vercel detects FastAPI from `app/app.py`, which re-exports the app from `app.main`.
-
-CLI flow:
-
-```bash
-vercel
-vercel --prod
-```
-
-Set production secrets with the Vercel dashboard or:
-
-```bash
-vercel env add LANGFUSE_PUBLIC_KEY production
-vercel env add LANGFUSE_SECRET_KEY production
-vercel env add LANGFUSE_BASE_URL production
-vercel env add GEMINI_API_KEY production
-vercel env add MYSCHEME_API_KEY production
-```
-
-## Langfuse Observability
-
-Create `.env` from `.env.example`:
-
-```bash
-cp .env.example .env
-```
-
-Set these values:
-
-```text
-LANGFUSE_PUBLIC_KEY=<your_langfuse_public_key>
-LANGFUSE_SECRET_KEY=<your_langfuse_secret_key>
-LANGFUSE_BASE_URL=https://cloud.langfuse.com
-```
-
-For US cloud, use:
-
-```text
+LANGFUSE_PUBLIC_KEY=
+LANGFUSE_SECRET_KEY=
 LANGFUSE_BASE_URL=https://us.cloud.langfuse.com
 ```
 
+Optional:
+
+```text
+GEMINI_API_KEY=
+MYSCHEME_API_KEY=
+CIVICAID_CORS_ORIGINS=http://127.0.0.1:8000,http://localhost:8000
+```
+
+Notes:
+
+- Keep `.env` local only. It is ignored by git.
+- Set production secrets in Vercel/Render dashboards or CLIs, not in git.
+- `CIVICAID_CORS_ORIGINS` is comma-separated. Keep it narrow in production.
+
+## Langfuse Tracing
+
 When enabled, each `/api/ask` call records one Langfuse trace row:
 
-- Root trace/observation: `civicaid-rag-agent`
-- `skill_files_read`: the local `skills/*/SKILL.md` files used by the request
-- `tools_used`: a top-level list of agent tools, status, inputs, outputs, and duration
-- `tool_usage_summary`: a readable one-line-per-tool summary for the trace output panel
-- `model_tool_usage`: whether the LLM provider itself made tool calls
-- `tool_calls`: the project tools called by the agent
-- `execution_log`: per-step inputs, outputs, status, nesting, and duration
-- Final answer and response summary
+- Root observation: `civicaid-rag-agent`
+- `input.skill_files_read`: skill filenames and hashes
+- `metadata.skill_files_read`: full `skills/*/SKILL.md` contents
+- `output.tools_used`: top-level tool list with status, inputs, outputs, and duration
+- `output.tool_usage_summary`: readable one-line-per-tool summary
+- `output.model_tool_usage`: whether the LLM provider itself made native tool calls
+- `output.tool_calls`: project tool call details
+- `output.execution_log`: collapsed per-step log
+- `output.answer`: final answer
+
+Important distinction:
+
+- The CivicAid agent calls project tools.
+- The Gemini provider currently does not make native tool calls. `model_tool_usage.provider_native_tool_calls` is therefore empty unless provider-native tool calling is added later.
 
 The API response includes `trace_url` when Langfuse credentials are active.
 
@@ -247,7 +159,7 @@ Ask:
 POST /api/ask
 ```
 
-Example body:
+Example:
 
 ```json
 {
@@ -263,36 +175,77 @@ Example body:
 }
 ```
 
-## Next Features
+## Deployment
 
-- Add PDF ingestion for official documents.
-- Store schemes and chunks in SQLite.
-- Add Hindi/English query translation.
-- Add FAISS or Chroma embeddings.
-- Add admin UI for adding schemes.
-- Add RAG evaluation dataset and citation-quality scoring.
+### Vercel
 
-## Failure Probes
-
-Run smoke tests before pushing:
+Vercel uses `app/app.py`, which re-exports `app.main:app`.
 
 ```bash
-python tests_smoke.py
+vercel
+vercel deploy --prod --yes
 ```
 
-Run likely-failure probes:
+Set production env vars:
 
 ```bash
+vercel env add LANGFUSE_PUBLIC_KEY production
+vercel env add LANGFUSE_SECRET_KEY production
+vercel env add LANGFUSE_BASE_URL production
+vercel env add GEMINI_API_KEY production
+vercel env add MYSCHEME_API_KEY production
+vercel env add CIVICAID_CORS_ORIGINS production
+```
+
+### Render
+
+`render.yaml` defines the web service.
+
+```text
+Build Command: pip install -r requirements.txt
+Start Command: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+Set secrets in Render dashboard or CLI. Do not commit secrets.
+
+## Tests
+
+Run all current checks:
+
+```bash
+python -m compileall app tools
+python tests_smoke.py
+python tests_case_suite.py
 python tests_failure_cases.py
 ```
 
-Current probe status:
+The case suite covers 20 behavior cases. The failure probe suite covers 8 risk cases.
 
-- Native Hindi scholarship query now passes through lightweight Hindi phrase expansion.
-- Vague document-only question now passes through profile-aware reranking.
-- Deadline questions retrieve the correct scheme, but the dataset has no deadline field yet.
+## Security Posture
 
-Remaining limitations:
+Current controls:
 
+- `.env`, `.venv`, `.vercel`, caches, and bytecode are git-ignored.
+- Render secret values are declared with `sync: false`.
+- Vercel/Render secrets must be configured outside git.
+- CORS is restricted to configured origins and browser credentials are disabled.
+- Frontend-rendered API values are escaped before insertion into HTML.
+- Official-source discovery filters to government or known official scheme URLs.
+- Langfuse traces are single-row and include tool visibility without creating extra child observations.
+
+Known residual risks:
+
+- `/api/ask` is public and unauthenticated. Add rate limiting and abuse protection before real production use.
+- Langfuse can store user question/profile fields. Do not submit sensitive personal data unless the Langfuse project access and retention policy are acceptable.
+- Dependency ranges for `langfuse` and `langchain` allow upgrades. Pin exact versions for reproducible production builds if needed.
 - Hindi support is phrase-based, not full translation.
-- Vague follow-up questions still need proper session memory for production use.
+- The dataset is small; out-of-dataset questions still need official verification.
+
+## Next Work
+
+- Add rate limiting for `/api/ask`.
+- Add auth or admin-only controls for ingestion if ingestion becomes remotely exposed.
+- Add full Hindi/English translation.
+- Add vector search with FAISS/Chroma.
+- Add an evaluation dataset with citation-quality scoring.
+- Add trace redaction or masking if handling real citizen PII.

@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 import uuid
@@ -12,6 +13,7 @@ _active_trace_id: ContextVar[str | None] = ContextVar("civicaid_langfuse_trace_i
 _active_observation_stack: ContextVar[tuple[str, ...]] = ContextVar("civicaid_langfuse_observation_stack", default=())
 _active_execution_log: ContextVar[list[dict[str, Any]] | None] = ContextVar("civicaid_execution_log", default=None)
 _active_log_stack: ContextVar[tuple[dict[str, Any], ...]] = ContextVar("civicaid_execution_log_stack", default=())
+logger = logging.getLogger(__name__)
 
 
 def langfuse_enabled() -> bool:
@@ -168,8 +170,8 @@ class LangfuseTracer:
             return
         try:
             self._client.update_current_span(**kwargs)
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Langfuse span update failed: %s", exc)
 
     def execution_log(self) -> list[dict[str, Any]]:
         return _trace_payload(_active_execution_log.get() or [])
@@ -187,8 +189,8 @@ class LangfuseTracer:
             return
         try:
             self._client.flush()
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Langfuse flush failed: %s", exc)
 
 
 tracer = LangfuseTracer()

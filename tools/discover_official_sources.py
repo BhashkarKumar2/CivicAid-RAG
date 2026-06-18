@@ -82,10 +82,22 @@ def normalize_text(text: str) -> str:
     return re.sub(r"\s+", " ", unescape(text)).strip()
 
 
+def _validate_http_url(url: str) -> None:
+    parsed = urlparse(url)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise ValueError("Only absolute HTTP(S) URLs can be fetched")
+
+
+def _urlopen_http(request: Request, *, timeout: int, context: ssl.SSLContext):
+    _validate_http_url(request.full_url)
+    # Bandit B310 is acceptable here because the scheme is validated immediately above.
+    return urlopen(request, timeout=timeout, context=context)  # nosec B310
+
+
 def is_official_url(url: str) -> bool:
     parsed = urlparse(url)
     host = parsed.netloc.lower()
-    if not parsed.scheme.startswith("http") or not host:
+    if parsed.scheme not in {"http", "https"} or not host:
         return False
     if parsed.path.lower().endswith(BLOCKED_EXTENSIONS):
         return False
@@ -181,9 +193,9 @@ def search_myscheme(question: str, max_results: int = 3) -> list[dict]:
         },
     )
     try:
-        with urlopen(request, timeout=25, context=ssl.create_default_context()) as response:
+        with _urlopen_http(request, timeout=25, context=ssl.create_default_context()) as response:
             payload = json.loads(response.read().decode("utf-8", errors="replace"))
-    except (OSError, json.JSONDecodeError):
+    except (OSError, ValueError, json.JSONDecodeError):
         return []
 
     items = payload.get("data", {}).get("hits", {}).get("items", [])
@@ -284,9 +296,9 @@ def fetch_duckduckgo_html(query: str, timeout: int = 20) -> str:
         },
     )
     try:
-        with urlopen(request, timeout=timeout, context=ssl.create_default_context()) as response:
+        with _urlopen_http(request, timeout=timeout, context=ssl.create_default_context()) as response:
             return response.read(1_000_000).decode("utf-8", errors="replace")
-    except OSError:
+    except (OSError, ValueError):
         return ""
 
 
@@ -300,9 +312,9 @@ def fetch_bing_html(query: str, timeout: int = 20) -> str:
         },
     )
     try:
-        with urlopen(request, timeout=timeout, context=ssl.create_default_context()) as response:
+        with _urlopen_http(request, timeout=timeout, context=ssl.create_default_context()) as response:
             return response.read(1_000_000).decode("utf-8", errors="replace")
-    except OSError:
+    except (OSError, ValueError):
         return ""
 
 
@@ -370,7 +382,7 @@ def fetch_page_text(url: str, timeout: int = 25) -> str:
         },
     )
     try:
-        with urlopen(request, timeout=timeout, context=ssl.create_default_context()) as response:
+        with _urlopen_http(request, timeout=timeout, context=ssl.create_default_context()) as response:
             content_type = response.headers.get_content_type()
             if content_type and "html" not in content_type and "text" not in content_type:
                 return ""
@@ -380,5 +392,5 @@ def fetch_page_text(url: str, timeout: int = 25) -> str:
             parser = TextExtractor()
             parser.feed(html)
             return parser.text()
-    except OSError:
+    except (OSError, ValueError):
         return ""
