@@ -136,20 +136,7 @@ class CivicAidAgent:
             summary = self._response_summary(results, web_sources, query_insights)
             next_actions = self._next_actions(profile_summary, query_insights, results, web_sources)
             trace_url = tracer.trace_url()
-            tracer.update_current(
-                output={
-                    "top_scheme": results[0]["scheme"]["id"] if results else None,
-                    "web_source_count": len(web_sources),
-                    "summary": summary,
-                    "agent_steps": [step.model_dump() for step in steps],
-                    "tool_calls": self._tool_calls_for_trace(steps),
-                    "execution_log": tracer.execution_log(),
-                    "answer": answer,
-                }
-            )
-            tracer.flush()
-
-            return {
+            response_payload = {
                 "question": request.question,
                 "answer": answer,
                 "results": results,
@@ -162,6 +149,20 @@ class CivicAidAgent:
                 "trace_url": trace_url,
                 "session_id": request.session_id,
             }
+            tracer.update_current(
+                output={
+                    "top_scheme": results[0]["scheme"]["id"] if results else None,
+                    "web_source_count": len(web_sources),
+                    "summary": summary,
+                    "agent_steps": [step.model_dump() for step in steps],
+                    "tool_calls": self._tool_calls_for_trace(steps),
+                    "execution_log": tracer.execution_log(),
+                    "answer": answer,
+                }
+            )
+
+        tracer.flush()
+        return response_payload
 
     @staticmethod
     def _skill_files_for_trace() -> list[dict[str, Any]]:
